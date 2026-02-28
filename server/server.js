@@ -71,7 +71,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date() }));
-
+app.get('/', (req, res) => res.json({ status: 'ok', time: new Date() }));
 // ────────────────────────────────────────────
 // MongoDB Connection
 // ────────────────────────────────────────────
