@@ -55,17 +55,22 @@ function dummyMLResponse(features) {
     if (honeypot === 1 || attempts_per_min > 10) {
         return { risk_score: 0.92, action: 'BLOCK', is_anomaly: true };
     }
-    // Moderate suspicion — device + geo anomaly combo (like the example)
-    if ((device_change === 1 && geo_anomaly === 1) || fail_ratio > 0.3) {
+    // High suspicion — device/geo anomaly combined WITH suspicious behaviour (fail ratio)
+    if ((device_change === 1 || geo_anomaly === 1) && fail_ratio > 0.3) {
         return { risk_score: 0.636, action: 'CHALLENGE', is_anomaly: true };
     }
-    // Higher suspicion
+    // Higher suspicion — pure velocity / credential stuffing signs
     if (attempts_per_min > 5 || fail_ratio > 0.8 || unique_accounts > 5) {
         return { risk_score: 0.55, action: 'CHALLENGE', is_anomaly: true };
     }
-    // Device or geo anomaly only
+    // New device + new geo — totally normal for a real user on a different network.
+    // Trigger CHALLENGE (OTP) but do NOT mark as anomaly (no ML boost).
+    if (device_change === 1 && geo_anomaly === 1) {
+        return { risk_score: 0.35, action: 'CHALLENGE', is_anomaly: false };
+    }
+    // Device or geo anomaly alone — low-risk, just note it
     if (device_change === 1 || geo_anomaly === 1) {
-        return { risk_score: 0.38, action: 'CHALLENGE', is_anomaly: false };
+        return { risk_score: 0.20, action: 'ALLOW', is_anomaly: false };
     }
     // Normal
     return { risk_score: 0.107, action: 'ALLOW', is_anomaly: false };

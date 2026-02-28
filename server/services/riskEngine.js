@@ -12,8 +12,8 @@ let THRESHOLDS = {
     abuse_ip: 50,             // AbuseIPDB score to trigger +30
     fail_ratio_high: 0.8,     // 80% fails to trigger +20
     unique_accounts_high: 5,  // unique accounts/IP to trigger +30
-    risk_block: 70,           // risk score >= this → BLOCK
-    risk_challenge: 30        // risk score >= this → CHALLENGE
+    risk_block: 75,           // risk score >= this → BLOCK
+    risk_challenge: 35        // risk score >= this → CHALLENGE (OTP)
 };
 
 function getThresholds() {
@@ -34,10 +34,13 @@ function computeRuleScore(features, abuseScore) {
 
     if (features.attempts_per_min > t.velocity_high) score += 40;
     if (abuseScore > t.abuse_ip) score += 30;
-    if (features.device_change === 1) score += 30;
-    if (features.fail_ratio > t.fail_ratio_high) score += 20;
+    // New device alone is normal (user on phone/laptop); combined signals are handled by ML
+    if (features.device_change === 1) score += 15;
+    if (features.fail_ratio > t.fail_ratio_high) score += 25;
     if (features.unique_accounts > t.unique_accounts_high) score += 30;
-    if (features.geo_anomaly === 1) score += 20;
+    // Geo anomaly alone is normal (user travelling); penalize more when combined with failures
+    if (features.geo_anomaly === 1) score += 10;
+    if (features.device_change === 1 && features.geo_anomaly === 1 && features.fail_ratio > 0.3) score += 20; // triple combo
     if (features.honeypot === 1) score += 50;
 
     return score;
